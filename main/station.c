@@ -23,6 +23,8 @@ static const char *TAG = "esp-dht-station";
 #define WIFI_PASS CONFIG_WIFI_PASS
 
 #define MQTT_BROKER_URL CONFIG_MQTT_BROKER_URL
+#define MQTT_USERNAME CONFIG_MQTT_USERNAME
+#define MQTT_PASSWORD CONFIG_MQTT_PASSWORD
 #define MQTT_PUB_TEMP CONFIG_MQTT_PUB_TEMP
 #define MQTT_PUB_HUM  CONFIG_MQTT_PUB_HUM
 
@@ -76,7 +78,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
                 pdFALSE,
                 portMAX_DELAY
             );
-            vTaskDelay( 5000 / portTICK_RATE_MS);
+            vTaskDelay( 5000 / portTICK_PERIOD_MS);
             ESP_ERROR_CHECK(esp_mqtt_client_reconnect(client));
             break;
         case MQTT_EVENT_SUBSCRIBED:
@@ -141,15 +143,20 @@ void wifi_init(void) {
 static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = MQTT_BROKER_URL,
+        .broker.address.uri = MQTT_BROKER_URL,
+
+       .credentials.username = MQTT_USERNAME,
+       .credentials.authentication.password = MQTT_PASSWORD
     };
+    // mqtt_cfg.credentials.username = MQTT_USERNAME;
+    // mqtt_cfg.credentials.authentication.password = MQTT_PASSWORD;
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, mqtt_client);
     esp_mqtt_client_start(mqtt_client);
 }
 
 /**
- * FreeRTOS task for gettin DHT22 sensor readings and
+ * FreeRTOS task for getting DHT22 sensor readings and
  * sending them to MQTT broker
  */
 void DHT_task(void *pvParameter)
@@ -186,7 +193,9 @@ void DHT_task(void *pvParameter)
         
         // -- wait at least 2 sec before reading again ------------
         // The interval of whole process must be beyond 2 seconds !! 
-        vTaskDelay( 10000 / portTICK_RATE_MS );
+
+        // 60 seconds
+        vTaskDelay( 60000 / portTICK_PERIOD_MS );
     }
 }
 
@@ -196,7 +205,7 @@ void DHT_task(void *pvParameter)
 void app_main()
 {
     nvs_flash_init();
-    vTaskDelay( 1000 / portTICK_RATE_MS );
+    vTaskDelay( 1000 / portTICK_PERIOD_MS );
     event_group_bits = xEventGroupCreate();
     wifi_init();
     mqtt_app_start();

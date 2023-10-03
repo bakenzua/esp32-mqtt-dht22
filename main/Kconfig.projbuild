@@ -18,6 +18,18 @@ menu "Program Configuration"
         help
             Mqtt broker URL for the program to use.
 
+    config MQTT_USERNAME
+        string "MQTT username"
+        default "username"
+        help
+            Mqtt client username for the program to use.
+
+    config MQTT_PASSWORD
+        string "MQTT password"
+        default "password"
+        help
+            Mqtt client password for the program to use.
+
     config MQTT_PUB_TEMP
         string "MQTT Temperature Topic"
         default "esp32/dht/temperature"
